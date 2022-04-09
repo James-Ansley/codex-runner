@@ -1,24 +1,11 @@
 import typer
 from tqdm import tqdm
-from typer import Argument, Option
+from typer import Option, Argument
 
-from utils.code_runner import make_container, run_test
+from utils.codex import generate_completion
 from utils.csv_writer import write_csv_data
-from utils.questions import Question
-
-QDATA_HELP = "The directory of the TOML containing question data"
-N_HELP = \
-    "The number of completions that will be generated for each question"
-TEMP_HELP = "The temperature used for completions"
-MAX_TOKENS_HELP = "The approximate tokens in addition to prompts"
-OUTPUT_COMPLETIONS_HELP = \
-    "The directory that will be written to with question data containing " \
-    "completions"
-OUTPUT_TESTS_HELP = \
-    "The directory that will be written to with question data containing " \
-    "test results"
-OUTPUT_WRITE_HELP = \
-    "The directory that will be written to containing average test scores"
+from utils.question import Question, Completion, TestResult
+from utils.runner.runner import CodeRunner
 
 app = typer.Typer()
 
@@ -32,52 +19,57 @@ def bar(prefix, iterable):
     )
 
 
-@app.command(
-    help="Outputs question data with OpenAI Codex completions to a TOML file."
-)
-def generate_completions(
-        qdata: str = Argument(..., help=QDATA_HELP),
-        output: str = Argument(..., help=OUTPUT_COMPLETIONS_HELP),
-        n: int = Option(1, help=N_HELP),
-        temperature: float = Option(0.9, help=TEMP_HELP),
-        max_tokens: int = Option(16, help=MAX_TOKENS_HELP),
+@app.command(help="Generates Completions")
+def gen(
+        in_: str = Argument(..., help="Input TOML file path"),
+        out: str = Argument(..., help="Output TOML file path"),
+        n: int = Option(1, help="Number of completions to generate"),
+        temp: float = Option(
+            0.9, help="Temperature to use when generating completions"
+        )
 ):
-    with open(qdata, 'rb') as f:
-        questions = Question.load_from_toml(f)
-    for question in bar('Generating Completions', questions):
-        question.generate_completions(n, temperature, max_tokens)
-    with open(output, 'w') as f:
-        Question.write_to_toml(questions, f)
+    with open(in_, 'rb') as f:
+        questions = Question.load_all_from_toml(f)
+    for q in bar("Answering Questions", questions):
+        q.completions = [
+            Completion(result) for result in generate_completion(q, n, temp)
+        ]
+    with open(out, 'w') as f:
+        f.write(Question.dump_all(questions))
 
 
-@app.command(help="Runs question completions against test cases.")
-def run_tests(
-        qdata: str = Argument(..., help=QDATA_HELP),
-        output: str = Argument(..., help=OUTPUT_TESTS_HELP)
+@app.command(help="Runs questions with completions against test cases.")
+def check(
+        in_: str = Argument(..., help="Input TOML file path with completions"),
+        out: str = Argument(..., help="Output TOML file path"),
 ):
-    with open(qdata, 'rb') as f:
-        questions = Question.load_from_toml(f)
-    with make_container() as container:
-        _run_tests(container, questions)
-    with open(output, 'w') as f:
-        Question.write_to_toml(questions, f)
+    with open(in_, 'rb') as f:
+        questions = Question.load_all_from_toml(f)
+    with CodeRunner() as cr:
+        _run_checks(questions, cr)
+    with open(out, 'w') as f:
+        f.write(Question.dump_all(questions))
 
 
-def _run_tests(container, questions):
-    for question in bar('Processing Questions', questions):
-        for test in bar('Running Test', question.testcases):
-            for answer in bar('Checking Answer', question.completions):
-                run_test(container, test, answer)
+def _run_checks(questions, cr):
+    for q in bar("Grading Questions", questions):
+        for cmp in bar("Checking Answer", q.completions):
+            for tc in bar("Against Testcase", q.testcases):
+                output = cr.run(tc.make_code(cmp.code), tc.stdin)
+                result = TestResult(tc, output)
+                cmp.results.append(result)
 
 
-@app.command(help="Writes average test scores to CSV")
-def write_results(
-        qdata: str = Argument(..., help=QDATA_HELP),
-        output: str = Argument(..., help=OUTPUT_WRITE_HELP)
+@app.command(help="Generates summary CSV file")
+def summary(
+        in_: str = Argument(
+            ..., help="Input TOML file path with scored completions"
+        ),
+        out: str = Argument(..., help="Output CSV file path"),
 ):
-    with open(qdata, 'rb') as f:
-        questions = Question.load_from_toml(f)
-    with open(output, 'w') as f:
+    with open(in_, 'rb') as f:
+        questions = Question.load_all_from_toml(f)
+    with open(out, 'w') as f:
         write_csv_data(f, questions)
 
 

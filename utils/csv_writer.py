@@ -9,7 +9,9 @@ def write_csv_data(f, questions):
     writer.add_column('qid', 'id')
     writer.add_multi(
         'response {}',
-        lambda q: (mean(c.results) for c in q.completions),
+        lambda q: (
+            mean(r.is_correct for r in c.results) for c in q.completions
+        ),
         num_completions,
         '{:.4f}',
         aggregate_ids={'scores'}
