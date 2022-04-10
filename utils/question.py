@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import BinaryIO
 
 import tomli
+from rapidfuzz import fuzz
 
 
 @dataclass
@@ -103,7 +104,8 @@ class TestResult:
 
     @property
     def is_correct(self):
-        return self.testcase.expect.strip() == self.got.strip()
+        ratio = fuzz.ratio(self.testcase.expect.strip(), self.got.strip())
+        return ratio >= 90
 
     def to_toml(self):
         return "\n".join((
@@ -116,9 +118,11 @@ class TestResult:
              if self.testcase.expect else "expect = ''"),
             (f"got = '''\n{self.got.strip()}\n'''"
              if self.got.strip() else "got = ''"),
+            f"is_correct = {'true' if self.is_correct else 'false'}",
         ))
 
     @classmethod
     def from_toml(cls, data):
         got = data.pop('got', '').rstrip()
+        data.pop('is_correct')
         return cls(Testcase(**data), got)

@@ -15,15 +15,15 @@ def input(prompt=""):
 {code}
 """
 
-try:
-    process = subprocess.Popen(
+with subprocess.Popen(
         ["python3", "-c", code],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         stdin=subprocess.PIPE,
         text=True,
-    )
-    output, _ = process.communicate(input=stdin, timeout=1)
-except subprocess.TimeoutExpired:
-    output = "*** TIMEOUT ***"
+) as process:
+    try:
+        output, _ = process.communicate(input=stdin, timeout=1)
+    except subprocess.TimeoutExpired:
+        output = "*** TIMEOUT ***"
 print(output)
