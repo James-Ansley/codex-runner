@@ -7,6 +7,8 @@ Scripts to assist in using OpenAI Codex to generate completions to questions.
 You must have docker running on your machine to run the automatic checking
 functionality of these scripts.
 
+You must have a `.env` file with your `OPENAI_API_KEY` set.
+
 ### Available Commands:
 
 ```text
