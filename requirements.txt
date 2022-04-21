@@ -7,3 +7,4 @@ ratelimit~=2.2.1
 tomli~=2.0.1
 list2csv~=1.3.6
 typer~=0.4.1
+rapidfuzz~=2.0.8
