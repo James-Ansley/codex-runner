@@ -92,7 +92,7 @@ Options:
 e.g.
 
 ```text
-python codex_runner.py summary data/qdata_checked.toml data/results.csv --strategy fuzzy
+python codex_runner.py summary data/qdata_checked.toml data/results.csv --test-strat fuzzy
 ```
 
 #### Strategies
@@ -119,7 +119,7 @@ one or several responses. They are:
   nothing marking with the following penalty scheme applied to subsequent
   attempts (`1.0, 1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5`).
   Stops when finding a question that passes all test cases or all 12 selected
-  questions are exhausted.
+  completions are exhausted.
 
 ### Question Format
 
