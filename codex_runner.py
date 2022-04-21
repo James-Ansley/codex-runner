@@ -45,19 +45,15 @@ def check(
 ):
     with open(in_, 'rb') as f:
         questions = Question.load_all_from_toml(f)
-    with CodeRunner() as cr:
-        _run_checks(questions, cr)
+    for q in bar("Grading Questions", questions):
+        with CodeRunner(q.support_files) as cr:
+            for cmp in bar("Checking Answer", q.completions):
+                for tc in bar("Against Testcase", q.testcases):
+                    output = cr.run(tc.make_code(cmp.code), tc.stdin)
+                    result = TestResult(tc, output)
+                    cmp.results.append(result)
     with open(out, 'w') as f:
         f.write(Question.dump_all(questions))
-
-
-def _run_checks(questions, cr):
-    for q in bar("Grading Questions", questions):
-        for cmp in bar("Checking Answer", q.completions):
-            for tc in bar("Against Testcase", q.testcases):
-                output = cr.run(tc.make_code(cmp.code), tc.stdin)
-                result = TestResult(tc, output)
-                cmp.results.append(result)
 
 
 @app.command(help="Generates summary CSV file")

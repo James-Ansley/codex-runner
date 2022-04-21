@@ -35,9 +35,10 @@ def _generate_completion(
     response = openai.Edit.create(
         engine='code-davinci-edit-001',
         instruction=question.prompt,
-        input=f'# Python 3\n{question.answer_preload.rstrip()}',
+        input=question.answer_preload.rstrip(),
         n=n,
         temperature=temperature,
     )
-    answers = [resp['text'].rstrip() for resp in response['choices']]
+    # ToDo – Figure out what to do with error results
+    answers = [resp.get('text', "ERR").rstrip() for resp in response['choices']]
     return answers

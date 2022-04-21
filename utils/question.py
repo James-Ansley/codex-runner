@@ -9,9 +9,10 @@ from rapidfuzz import fuzz
 class Question:
     id: str
     prompt: str
-    answer_preload: str = None
+    answer_preload: str = ''
     testcases: list['Testcase'] = field(default_factory=list)
     completions: list['Completion'] = field(default_factory=list)
+    support_files: list['SupportFile'] = field(default_factory=list)
 
     @classmethod
     def load_all_from_toml(cls, f: BinaryIO):
@@ -28,11 +29,14 @@ class Question:
                      for tc in data.pop('testcases', [])]
         completions = [Completion.from_toml(c)
                        for c in data.pop('completions', [])]
-        return (cls(
+        support_files = [SupportFile.from_toml(sf)
+                         for sf in data.pop('support_files', [])]
+        return cls(
             **data,
             testcases=testcases,
-            completions=completions
-        ))
+            completions=completions,
+            support_files=support_files,
+        )
 
     def to_toml(self):
         return "\n".join((
@@ -48,6 +52,25 @@ class Question:
             ("\n\n".join(comp.to_toml() for comp in self.completions)),
             "",
             ("\n\n".join(tc.to_toml() for tc in self.testcases)),
+            "",
+            ("\n\n".join(sf.to_toml() for sf in self.support_files)),
+        ))
+
+
+@dataclass
+class SupportFile:
+    name: str
+    text: str
+
+    @classmethod
+    def from_toml(cls, data):
+        return cls(**data)
+
+    def to_toml(self):
+        return "\n".join((
+            "[[questions.support_files]]",
+            f"name = '{self.name}'",
+            f"text = '''{self.text}'''"
         ))
 
 
