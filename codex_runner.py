@@ -6,8 +6,9 @@ from utils.codex import generate_completion
 from utils.csv_writer import write_csv_data
 from utils.question import Question, Completion, TestResult
 from utils.runner.runner import CodeRunner
+from utils.scoring import TestingStrategy, ScoringStrategy
 
-app = typer.Typer()
+app = typer.Typer(add_completion=False)
 
 
 def bar(prefix, iterable):
@@ -21,7 +22,7 @@ def bar(prefix, iterable):
 
 @app.command(help="Generates Completions")
 def gen(
-        in_: str = Argument(..., help="Input TOML file path"),
+        in_: str = Argument(..., help="Input TOML file path", metavar="IN"),
         out: str = Argument(..., help="Output TOML file path"),
         n: int = Option(1, help="Number of completions to generate"),
         temp: float = Option(
@@ -39,8 +40,10 @@ def gen(
 
 
 @app.command(help="Runs questions with completions against test cases.")
-def check(
-        in_: str = Argument(..., help="Input TOML file path with completions"),
+def test(
+        in_: str = Argument(
+            ..., help="Input TOML file path with completions", metavar="IN"
+        ),
         out: str = Argument(..., help="Output TOML file path"),
 ):
     with open(in_, 'rb') as f:
@@ -59,14 +62,28 @@ def check(
 @app.command(help="Generates summary CSV file")
 def summary(
         in_: str = Argument(
-            ..., help="Input TOML file path with scored completions"
+            ...,
+            help="Input TOML file path with scored completions",
+            metavar="IN",
         ),
         out: str = Argument(..., help="Output CSV file path"),
+        test_strat: TestingStrategy = Option(
+            TestingStrategy.exact,
+            help="Strategy to use when testing completion correctness",
+            case_sensitive=False,
+        ),
+        scoring_strat: ScoringStrategy = Option(
+            ScoringStrategy.basic,
+            help="Strategy to use when scoring questions",
+            case_sensitive=False,
+        ),
 ):
     with open(in_, 'rb') as f:
         questions = Question.load_all_from_toml(f)
     with open(out, 'w') as f:
-        write_csv_data(f, questions)
+        write_csv_data(
+            f, questions, test_strat.callable, scoring_strat.callable
+        )
 
 
 if __name__ == '__main__':
