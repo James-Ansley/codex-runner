@@ -81,12 +81,12 @@ Arguments:
 Options:
   --test-strat [exact|fuzzy_w_cutoff|fuzzy]
                                   Strategy to use when testing completion
-                                  correctness  [default:
-                                  TestingStrategy.exact]
-  --scoring-strat [basic|penalty]
+                                  correctness  [default: Options.exact]
+  --scoring-strat [basic|expected|finite-expected|all-or-nothing]
                                   Strategy to use when scoring questions
-                                  [default: ScoringStrategy.basic]
+                                  [default: Options.basic]
   --help                          Show this message and exit.
+
 ```
 
 e.g.
@@ -114,12 +114,13 @@ They are:
 Scoring strategies are used to give an overall mark to an attempt – combining
 one or several responses. They are:
 
-- *basic*: reports average number of passing testcases for each completion
-- *penalty*: randomly chooses 12 completions and grades them using all or
-  nothing marking with the following penalty scheme applied to subsequent
-  attempts (`1.0, 1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5`).
-  Stops when finding a question that passes all test cases or all 12 selected
-  completions are exhausted.
+- _basic_: reports average number of passing testcases for each completion
+- _expected_: reports the approximate expected score codex would get with
+  infinite attempts using the following penalty scheme:
+  (`1.0, 1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.5, ...`).
+- _finite-expected_: Uses the above penalty scheme but is limited to 12 attempts
+- _all-or-nothing_: gives 1 for each completion that passes all test cases and 
+  0 otherwise.
 
 ### Question Format
 
