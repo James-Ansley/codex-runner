@@ -6,7 +6,8 @@ from utils.codex import generate_completion
 from utils.csv_writer import write_csv_data
 from utils.question import Question, Completion, TestResult
 from utils.runner.runner import CodeRunner
-from utils.scoring import TestingStrategy, ScoringStrategy
+from utils.scoring_strategy import Options as ScoringStrategies
+from utils.testing_strategy import Options as TestingStrategies
 
 app = typer.Typer(add_completion=False)
 
@@ -67,13 +68,13 @@ def summary(
             metavar="IN",
         ),
         out: str = Argument(..., help="Output CSV file path"),
-        test_strat: TestingStrategy = Option(
-            TestingStrategy.exact,
+        test_strat: TestingStrategies = Option(
+            TestingStrategies.exact,
             help="Strategy to use when testing completion correctness",
             case_sensitive=False,
         ),
-        scoring_strat: ScoringStrategy = Option(
-            ScoringStrategy.basic,
+        scoring_strat: ScoringStrategies = Option(
+            ScoringStrategies.basic,
             help="Strategy to use when scoring questions",
             case_sensitive=False,
         ),
@@ -82,7 +83,7 @@ def summary(
         questions = Question.load_all_from_toml(f)
     with open(out, 'w') as f:
         write_csv_data(
-            f, questions, test_strat.callable, scoring_strat.callable
+            f, questions, test_strat.strategy, scoring_strat.strategy
         )
 
 

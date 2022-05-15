@@ -144,5 +144,4 @@ class TestResult:
     @classmethod
     def from_toml(cls, data):
         got = data.pop('got', '').rstrip()
-        data.pop('is_correct')
         return cls(Testcase(**data), got)
