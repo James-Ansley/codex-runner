@@ -1,13 +1,10 @@
-import random
 from collections.abc import Iterable
 from enum import Enum
-from itertools import starmap
-from operator import mul
 from statistics import mean
 from typing import Callable
 
-from utils.testing_strategy import TestCaseScoringStrategy
 from utils.question import Completion
+from utils.testing_strategy import TestCaseScoringStrategy
 
 QuestionScoringStrategy = Callable[
     [Iterable[Completion], TestCaseScoringStrategy],
@@ -46,6 +43,17 @@ def basic_score(completions, test_case_scoring_strategy):
     ]
 
 
+def all_or_nothing(completions, test_case_scoring_strategy):
+    """
+    Equivalent to the floor of the basic scoring strategy.
+    """
+    scores = [
+        int(all(r.score(test_case_scoring_strategy) == 1 for r in c.results))
+        for c in completions
+    ]
+    return scores
+
+
 def expected_score(completions, test_case_scoring_strategy):
     """
     Approximate expected score using all-or-nothing grading with UoA
@@ -78,14 +86,3 @@ def expected_finite_attempts(completions, test_case_scoring_strategy):
         probability_penalty = (not_probability ** i) * probability * penalty
         result += probability_penalty
     return [result]
-
-
-def all_or_nothing(completions, test_case_scoring_strategy):
-    """
-    Equivalent to the floor of the basic scoring strategy.
-    """
-    scores = [
-        int(all(r.score(test_case_scoring_strategy) == 1 for r in c.results))
-        for c in completions
-    ]
-    return scores
